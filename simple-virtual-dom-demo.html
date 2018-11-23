@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>test</div>
+    <div id="root"></div>
+    <button onclick="patchElement(root, vNodes2, vNodes1)">change</button>
+    <div id="root2"></div>
+    <script>
+        /**
+        * @author ruoyu
+        * @description 虚拟 DOM Demo
+        * @todo 暂时不考虑复杂情况
+        **/
+
+        class VNode {
+            constructor(tag, children, text) {
+                this.tag = tag
+                this.text = text
+                this.children = children
+            }
+
+            render() {
+                if (this.tag === '#text') {
+                    return document.createTextNode(this.text)
+                }
+                let el = document.createElement(this.tag)
+                this.children.forEach(vChild => {
+                    el.appendChild(vChild.render())
+                })
+                return el
+            }
+        }
+
+        function v(tag, children, text) {
+            if (typeof children === 'string') {
+                text = children
+                children = []
+            }
+            return new VNode(tag, children, text)
+        }
+
+        function patchElement(parent, newVNode, oldVNode, index = 0) {
+            if (!oldVNode) {
+                parent.appendChild(newVNode.render())
+            } else if (!newVNode) {
+                parent.removeChild(parent.childNodes[index])
+            } else if (newVNode.tag !== oldVNode.tag || newVNode.text !== oldVNode.text) {
+                parent.replaceChild(newVNode.render(), parent.childNodes[index])
+            } else {
+                for (let i = 0; i < newVNode.children.length || i < oldVNode.children.length; i++) {
+                    patchElement(parent.childNodes[index], newVNode.children[i], oldVNode.children[i], i)
+                }
+            }
+        }
+        
+        let vNodes = v('div', [
+            v('p', [
+                v('span', [v('#text', '你好')])
+            ]
+            ),
+            v('span', [
+                v('#text', '世界')
+            ])
+        ])
+
+        let vNodes1 = v('div', [v('#text','hello')])
+
+        let vNodes2 = v('div', [v('#text','world')])
+
+        const root = document.querySelector('#root')
+
+        const root2 = document.querySelector('#root2')
+        
+        root2.appendChild(vNodes.render())
+
+        patchElement(root, vNodes1)
+
+    </script>
+</body>
+
+</html>
